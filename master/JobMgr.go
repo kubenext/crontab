@@ -47,7 +47,7 @@ func InitJobMgr() (err error) {
 	return
 }
 
-func (mgr JobMgr) Save(job *common.Job) (oldJob *common.Job, err error) {
+func (mgr *JobMgr) Save(job *common.Job) (oldJob *common.Job, err error) {
 	var (
 		jobKey      string
 		jobValue    []byte
@@ -55,7 +55,7 @@ func (mgr JobMgr) Save(job *common.Job) (oldJob *common.Job, err error) {
 		oldJobObj   common.Job
 	)
 
-	jobKey = "/cron/jobs/" + job.Name
+	jobKey = common.JOB_SAVE_DIR + job.Name
 
 	if jobValue, err = json.Marshal(job); err != nil {
 		return nil, err
@@ -76,4 +76,27 @@ func (mgr JobMgr) Save(job *common.Job) (oldJob *common.Job, err error) {
 
 	return
 
+}
+
+func (mgr *JobMgr) DeleteJob(name string) (oldJob *common.Job, err error) {
+	var (
+		jobKey      string
+		delResponse *clientv3.DeleteResponse
+		oldJobObj   common.Job
+	)
+	jobKey = common.JOB_SAVE_DIR + name
+
+	if delResponse, err = mgr.kv.Delete(context.TODO(), jobKey, clientv3.WithPrevKV()); err != nil {
+		return
+	}
+
+	if len(delResponse.PrevKvs) != 0 {
+		if err = json.Unmarshal(delResponse.PrevKvs[0].Value, &oldJobObj); err != nil {
+			err = nil
+			return
+		}
+		oldJob = &oldJobObj
+	}
+
+	return
 }

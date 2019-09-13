@@ -55,6 +55,37 @@ ERR:
 	}
 }
 
+func handleJobDelete(response http.ResponseWriter, request *http.Request) {
+	var (
+		err    error
+		name   string
+		oldJob *common.Job
+		bytes  []byte
+	)
+	if err = request.ParseForm(); err != nil {
+		goto ERR
+	}
+
+	name = request.PostForm.Get("name")
+
+	if oldJob, err = G_jobMgr.DeleteJob(name); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "success", oldJob); err == nil {
+		response.Write(bytes)
+	}
+
+	return
+
+ERR:
+
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		response.Write(bytes)
+	}
+
+}
+
 // Initialization service
 func InitApiServer() (err error) {
 	var (
@@ -64,6 +95,7 @@ func InitApiServer() (err error) {
 	)
 	mux = http.NewServeMux()
 	mux.HandleFunc("/job/save", handleJobSave)
+	mux.HandleFunc("/job/delete", handleJobDelete)
 
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ServerPort)); err != nil {
 		return err
