@@ -4,5 +4,7 @@
   "serverWriteTimeout": 5000,
 
   "etcdEndpoints": ["localhost:2379"],
-  "etcdDialTimeout": 5000
+  "etcdDialTimeout": 5000,
+
+  "webroot": "./webroot"
 }

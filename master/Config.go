@@ -16,6 +16,7 @@ type Config struct {
 	ServerWriteTimeout int      `json:"serverWriteTimeout"`
 	EtcdEndpoints      []string `json:"etcdEndpoints"`
 	EtcdDialTimeout    int      `json:"etcdDialTimeout"`
+	Webroot            string   `json:"webroot"`
 }
 
 // Load configuration

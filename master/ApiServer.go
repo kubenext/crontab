@@ -86,16 +86,79 @@ ERR:
 
 }
 
+func handleJobList(response http.ResponseWriter, request *http.Request) {
+	var (
+		jobs  []*common.Job
+		err   error
+		bytes []byte
+	)
+	if jobs, err = G_jobMgr.ListJobs(); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "success", jobs); err == nil {
+		response.Write(bytes)
+	}
+
+	return
+
+ERR:
+
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		response.Write(bytes)
+	}
+
+}
+
+func handleJobKill(response http.ResponseWriter, request *http.Request) {
+	var (
+		err   error
+		name  string
+		bytes []byte
+	)
+
+	if err = request.ParseForm(); err != nil {
+		goto ERR
+	}
+
+	name = request.PostForm.Get("name")
+
+	if err = G_jobMgr.KillJob(name); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "success", nil); err == nil {
+		response.Write(bytes)
+	}
+
+	return
+
+ERR:
+
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		response.Write(bytes)
+	}
+
+}
+
 // Initialization service
 func InitApiServer() (err error) {
 	var (
-		mux        *http.ServeMux
-		listener   net.Listener
-		httpServer *http.Server
+		mux           *http.ServeMux
+		listener      net.Listener
+		httpServer    *http.Server
+		staticDir     http.Dir
+		staticHandler http.Handler
 	)
 	mux = http.NewServeMux()
 	mux.HandleFunc("/job/save", handleJobSave)
 	mux.HandleFunc("/job/delete", handleJobDelete)
+	mux.HandleFunc("/job/list", handleJobList)
+	mux.HandleFunc("/job/kill", handleJobKill)
+
+	staticDir = http.Dir(G_config.Webroot)
+	staticHandler = http.FileServer(staticDir)
+	mux.Handle("/", http.StripPrefix("/", staticHandler))
 
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ServerPort)); err != nil {
 		return err

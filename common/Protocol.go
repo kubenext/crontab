@@ -3,9 +3,9 @@ package common
 import "encoding/json"
 
 type Job struct {
-	Name     string `json:""` //Task name
-	Command  string `json:""` //Shell Command
-	CronExpr string `json:""` //Cron Expression
+	Name     string `json:"name"`     //Task name
+	Command  string `json:"command"`  //Shell Command
+	CronExpr string `json:"cronExpr"` //Cron Expression
 }
 
 type Response struct {

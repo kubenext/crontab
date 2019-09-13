@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/kubenext/crontab/common"
 	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/mvcc/mvccpb"
 	"time"
 )
 
@@ -96,6 +97,56 @@ func (mgr *JobMgr) DeleteJob(name string) (oldJob *common.Job, err error) {
 			return
 		}
 		oldJob = &oldJobObj
+	}
+
+	return
+}
+
+func (mgr *JobMgr) ListJobs() (jobs []*common.Job, err error) {
+	var (
+		dirKey      string
+		getResponse *clientv3.GetResponse
+		kvPair      *mvccpb.KeyValue
+		job         *common.Job
+	)
+	dirKey = common.JOB_SAVE_DIR
+
+	if getResponse, err = mgr.kv.Get(context.TODO(), dirKey, clientv3.WithPrefix()); err != nil {
+		return
+	}
+
+	jobs = make([]*common.Job, 0)
+
+	for _, kvPair = range getResponse.Kvs {
+		job = &common.Job{}
+		if err = json.Unmarshal(kvPair.Value, job); err != nil {
+			err = nil
+			continue
+		}
+		jobs = append(jobs, job)
+	}
+
+	return
+}
+
+func (mgr *JobMgr) KillJob(name string) (err error) {
+
+	var (
+		killerKey          string
+		leaseGrantResponse *clientv3.LeaseGrantResponse
+		leaseId            clientv3.LeaseID
+	)
+
+	killerKey = common.JOB_KILL_DIR + name
+
+	if leaseGrantResponse, err = mgr.lease.Grant(context.TODO(), 1); err != nil {
+		return
+	}
+
+	leaseId = leaseGrantResponse.ID
+
+	if _, err = mgr.kv.Put(context.TODO(), killerKey, "", clientv3.WithLease(leaseId)); err != nil {
+		return
 	}
 
 	return
