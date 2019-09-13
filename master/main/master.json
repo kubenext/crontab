@@ -1,0 +1,8 @@
+{
+  "serverPort": 8070,
+  "serverReadTimeout": 5000,
+  "serverWriteTimeout": 5000,
+
+  "etcdEndpoints": ["localhost:2379"],
+  "etcdDialTimeout": 5000
+}
