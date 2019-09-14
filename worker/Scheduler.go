@@ -81,6 +81,8 @@ func (scheduler *Scheduler) handleJobEvent(jobEvent *common.JobEvent) {
 		jobSchedulePlan *common.JobSchedulePlan
 		jobExisted      bool
 		err             error
+		jobExecuteInfo  *common.JobExecuteInfo
+		jobExecuting    bool
 	)
 	switch jobEvent.EventType {
 	case common.JOB_EVENT_SAVE:
@@ -92,12 +94,41 @@ func (scheduler *Scheduler) handleJobEvent(jobEvent *common.JobEvent) {
 		if jobSchedulePlan, jobExisted = scheduler.jobPlanTable[jobEvent.Job.Name]; jobExisted {
 			delete(scheduler.jobPlanTable, jobEvent.Job.Name)
 		}
+	case common.JOB_EVENT_KILL:
+		if jobExecuteInfo, jobExecuting = scheduler.jobExecutingTable[jobEvent.Job.Name]; jobExecuting {
+			jobExecuteInfo.CancelFunc()
+		}
 	}
 }
 
 func (scheduler *Scheduler) handleJobResult(jobResult *common.JobExecuteResult) {
+
+	var (
+		jobLog *common.JobLog
+	)
+
 	delete(scheduler.jobExecutingTable, jobResult.ExecuteInfo.Job.Name)
 	fmt.Println("任务执行完成：", jobResult.ExecuteInfo.Job.Name, string(jobResult.Output), jobResult.Err)
+
+	if jobResult.Err != common.ERR_LOCAK_ALREADY_REQUIRED {
+		jobLog = &common.JobLog{
+			JobName:      jobResult.ExecuteInfo.Job.Name,
+			Command:      jobResult.ExecuteInfo.Job.Command,
+			Output:       string(jobResult.Output),
+			PlanTime:     jobResult.ExecuteInfo.PlanTime.UnixNano() / 1000 / 1000,
+			ScheduleTime: jobResult.ExecuteInfo.RealTime.UnixNano() / 1000 / 1000,
+			StartTime:    jobResult.StartTime.UnixNano() / 1000 / 1000,
+			EndTime:      jobResult.EndTime.UnixNano() / 1000 / 1000,
+		}
+		if jobResult.Err != nil {
+			jobLog.Err = jobResult.Err.Error()
+		} else {
+			jobLog.Err = ""
+		}
+
+		G_logSink.Append(jobLog)
+	}
+
 }
 
 func (scheduler *Scheduler) scheduleLoop() {

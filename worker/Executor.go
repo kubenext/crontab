@@ -1,8 +1,8 @@
 package worker
 
 import (
-	"context"
 	"github.com/kubenext/crontab/common"
+	"math/rand"
 	"os/exec"
 	"time"
 )
@@ -33,6 +33,7 @@ func (executor *Executor) ExecuteJob(info *common.JobExecuteInfo) {
 
 		result.StartTime = time.Now()
 
+		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
 		err = jobLock.TryLock()
 		defer jobLock.Unlock()
 
@@ -41,7 +42,7 @@ func (executor *Executor) ExecuteJob(info *common.JobExecuteInfo) {
 			result.EndTime = time.Now()
 		} else {
 			result.StartTime = time.Now()
-			cmd = exec.CommandContext(context.TODO(), "/bin/bash", "-c", info.Job.Command)
+			cmd = exec.CommandContext(info.CancelCtx, "/bin/bash", "-c", info.Job.Command)
 
 			output, err = cmd.CombinedOutput()
 

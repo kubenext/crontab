@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gorhill/cronexpr"
 	"strings"
@@ -31,9 +32,11 @@ type JobSchedulePlan struct {
 }
 
 type JobExecuteInfo struct {
-	Job      *Job
-	PlanTime time.Time
-	RealTime time.Time
+	Job        *Job
+	PlanTime   time.Time
+	RealTime   time.Time
+	CancelCtx  context.Context
+	CancelFunc context.CancelFunc
 }
 
 type JobExecuteResult struct {
@@ -42,6 +45,21 @@ type JobExecuteResult struct {
 	Err         error
 	StartTime   time.Time
 	EndTime     time.Time
+}
+
+type JobLog struct {
+	JobName      string `bson:"jobName"`
+	Command      string `bson:"command"`
+	Err          string `bson:"err"`
+	Output       string `bson:"output"`
+	PlanTime     int64  `bson:"planTime"`
+	ScheduleTime int64  `bson:"scheduleTime"`
+	StartTime    int64  `bson:"startTime"`
+	EndTime      int64  `bson:"endTime"`
+}
+
+type LogBatch struct {
+	Logs []interface{}
 }
 
 func BuildResponse(errno int, msg string, data interface{}) (response []byte, err error) {
@@ -75,6 +93,10 @@ func ExtractJobName(jobKey string) string {
 	return strings.TrimPrefix(jobKey, JOB_SAVE_DIR)
 }
 
+func ExtractKillerName(jobKey string) string {
+	return strings.TrimPrefix(jobKey, JOB_KILL_DIR)
+}
+
 func BuildJobEvent(eventType int, job *Job) *JobEvent {
 	return &JobEvent{
 		EventType: eventType,
@@ -104,5 +126,6 @@ func BuildJobExecuteInfo(jobSchedulePlan *JobSchedulePlan) (jobExecuteInfo *JobE
 		PlanTime: jobSchedulePlan.NextTime,
 		RealTime: time.Now(),
 	}
+	jobExecuteInfo.CancelCtx, jobExecuteInfo.CancelFunc = context.WithCancel(context.TODO())
 	return
 }
