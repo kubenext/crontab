@@ -186,6 +186,29 @@ ERR:
 
 }
 
+func handleWorkerList(response http.ResponseWriter, request *http.Request) {
+	var (
+		workerArr []string
+		err       error
+		bytes     []byte
+	)
+
+	if workerArr, err = G_workerMgr.ListWorkers(); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "success", workerArr); err == nil {
+		response.Write(bytes)
+	}
+
+	return
+ERR:
+
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		response.Write(bytes)
+	}
+}
+
 // Initialization service
 func InitApiServer() (err error) {
 	var (
@@ -201,6 +224,7 @@ func InitApiServer() (err error) {
 	mux.HandleFunc("/job/list", handleJobList)
 	mux.HandleFunc("/job/kill", handleJobKill)
 	mux.HandleFunc("/job/log", handleJobLog)
+	mux.HandleFunc("/worker/list", handleWorkerList)
 
 	staticDir = http.Dir(G_config.Webroot)
 	staticHandler = http.FileServer(staticDir)

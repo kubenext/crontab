@@ -9,4 +9,6 @@ const (
 	JOB_EVENT_KILL   = 3
 
 	JOB_LOCK_KEY = "/cron/lock/"
+
+	JOB_WORKER_DIR = "/cron/workers/"
 )
