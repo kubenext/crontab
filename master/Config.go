@@ -11,12 +11,14 @@ var (
 )
 
 type Config struct {
-	ServerPort         int      `json:"serverPort"`
-	ServerReadTimeout  int      `json:"serverReadTimeout"`
-	ServerWriteTimeout int      `json:"serverWriteTimeout"`
-	EtcdEndpoints      []string `json:"etcdEndpoints"`
-	EtcdDialTimeout    int      `json:"etcdDialTimeout"`
-	Webroot            string   `json:"webroot"`
+	ServerPort            int      `json:"serverPort"`
+	ServerReadTimeout     int      `json:"serverReadTimeout"`
+	ServerWriteTimeout    int      `json:"serverWriteTimeout"`
+	EtcdEndpoints         []string `json:"etcdEndpoints"`
+	EtcdDialTimeout       int      `json:"etcdDialTimeout"`
+	Webroot               string   `json:"webroot"`
+	MongodbUri            string   `json:"mongodbUri"`
+	MongodbConnectTimeout int      `json:"mongodbConnectTimeout"`
 }
 
 // Load configuration

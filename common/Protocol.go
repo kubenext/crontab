@@ -62,6 +62,14 @@ type LogBatch struct {
 	Logs []interface{}
 }
 
+type JobLogFilter struct {
+	JobName string `bson:"jobName"`
+}
+
+type SortLogByStartTIme struct {
+	SortOrder int `bson:"startTime"`
+}
+
 func BuildResponse(errno int, msg string, data interface{}) (response []byte, err error) {
 	var (
 		rsp Response

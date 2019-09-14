@@ -141,6 +141,51 @@ ERR:
 
 }
 
+func handleJobLog(response http.ResponseWriter, request *http.Request) {
+	var (
+		err        error
+		name       string
+		startParam string
+		limitParam string
+		start      int
+		limit      int
+		logArr     []*common.JobLog
+		bytes      []byte
+	)
+
+	if err = request.ParseForm(); err != nil {
+		goto ERR
+	}
+
+	name = request.Form.Get("name")
+	startParam = request.Form.Get("start")
+	limitParam = request.Form.Get("limit")
+
+	if start, err = strconv.Atoi(startParam); err != nil {
+		start = 0
+	}
+
+	if limit, err = strconv.Atoi(limitParam); err != nil {
+		limit = 20
+	}
+
+	if logArr, err = G_logMgr.ListLog(name, int64(start), int64(limit)); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "success", logArr); err == nil {
+		response.Write(bytes)
+	}
+
+	return
+ERR:
+
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		response.Write(bytes)
+	}
+
+}
+
 // Initialization service
 func InitApiServer() (err error) {
 	var (
@@ -155,6 +200,7 @@ func InitApiServer() (err error) {
 	mux.HandleFunc("/job/delete", handleJobDelete)
 	mux.HandleFunc("/job/list", handleJobList)
 	mux.HandleFunc("/job/kill", handleJobKill)
+	mux.HandleFunc("/job/log", handleJobLog)
 
 	staticDir = http.Dir(G_config.Webroot)
 	staticHandler = http.FileServer(staticDir)
